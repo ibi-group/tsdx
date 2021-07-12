@@ -25,6 +25,7 @@ import semver from 'semver'
 import { concatAllArray } from 'jpjs'
 import { Input, Select } from 'enquirer'
 
+import commit from './mastarm/commit'
 import logError from './logError'
 import { paths } from './constants'
 import * as Messages from './messages'
@@ -614,5 +615,9 @@ prog
       }
     }
   )
+
+prog.command('commit').action(() => {
+  commit()
+})
 
 prog.parse(process.argv)
