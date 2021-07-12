@@ -1,6 +1,6 @@
-import * as fs from 'fs-extra';
+import * as fs from 'fs-extra'
 
-import { paths } from './constants';
+import { paths } from './constants'
 
 /*
   This was originally needed because the default
@@ -11,10 +11,10 @@ import { paths } from './constants';
   that in for some time too.
 */
 export async function moveTypes() {
-  const appDistSrc = paths.appDist + '/src';
+  const appDistSrc = paths.appDist + '/src'
 
-  const pathExists = await fs.pathExists(appDistSrc);
-  if (!pathExists) return;
+  const pathExists = await fs.pathExists(appDistSrc)
+  if (!pathExists) return
 
   // see note above about deprecation window
   console.warn(
@@ -24,11 +24,11 @@ export async function moveTypes() {
       '"./" as it caused buggy output for declarationMaps and more.\n' +
       'You may also need to change your include to remove "test", which also ' +
       'caused declarations to be unnecessarily created for test files.'
-  );
+  )
 
   // Move the type declarations to the base of the ./dist folder
   await fs.copy(appDistSrc, paths.appDist, {
-    overwrite: true,
-  });
-  await fs.remove(appDistSrc);
+    overwrite: true
+  })
+  await fs.remove(appDistSrc)
 }

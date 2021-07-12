@@ -1,6 +1,7 @@
-import { Config } from '@jest/types';
+/* eslint-disable sort-keys */
+import { Config } from '@jest/types'
 
-export type JestConfigOptions = Partial<Config.InitialOptions>;
+export type JestConfigOptions = Partial<Config.InitialOptions>
 
 export function createJestConfig(
   _: (relativePath: string) => void,
@@ -9,7 +10,7 @@ export function createJestConfig(
   const config: JestConfigOptions = {
     transform: {
       '.(ts|tsx)$': require.resolve('ts-jest/dist'),
-      '.(js|jsx)$': require.resolve('babel-jest'), // jest's default
+      '.(js|jsx)$': require.resolve('babel-jest') // jest's default
     },
     transformIgnorePatterns: ['[/\\\\]node_modules[/\\\\].+\\.(js|jsx)$'],
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
@@ -19,9 +20,9 @@ export function createJestConfig(
     rootDir,
     watchPlugins: [
       require.resolve('jest-watch-typeahead/filename'),
-      require.resolve('jest-watch-typeahead/testname'),
-    ],
-  };
+      require.resolve('jest-watch-typeahead/testname')
+    ]
+  }
 
-  return config;
+  return config
 }

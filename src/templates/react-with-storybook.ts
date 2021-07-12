@@ -1,6 +1,8 @@
-import { Template } from './template';
-import reactTemplate from './react';
-import { PackageJson } from 'type-fest';
+/* eslint-disable sort-keys */
+import { PackageJson } from 'type-fest'
+
+import { Template } from './template'
+import reactTemplate from './react'
 
 const storybookTemplate: Template = {
   dependencies: [
@@ -12,7 +14,7 @@ const storybookTemplate: Template = {
     '@storybook/addons',
     '@storybook/react',
     'react-is',
-    'babel-loader',
+    'babel-loader'
   ],
   name: 'react-with-storybook',
   packageJson: {
@@ -20,9 +22,9 @@ const storybookTemplate: Template = {
     scripts: {
       ...reactTemplate.packageJson.scripts,
       storybook: 'start-storybook -p 6006',
-      'build-storybook': 'build-storybook',
-    } as PackageJson['scripts'],
-  },
-};
+      'build-storybook': 'build-storybook'
+    } as PackageJson['scripts']
+  }
+}
 
-export default storybookTemplate;
+export default storybookTemplate

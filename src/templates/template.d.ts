@@ -1,7 +1,7 @@
-import { PackageJson } from 'type-fest';
+import { PackageJson } from 'type-fest'
 
 interface Template {
-  dependencies: string[];
-  name: string;
-  packageJson: PackageJson;
+  dependencies: string[]
+  name: string
+  packageJson: PackageJson
 }

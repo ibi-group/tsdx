@@ -1,4 +1,5 @@
-import { Template } from './template';
+/* eslint-disable sort-keys */
+import { Template } from './template'
 
 const basicTemplate: Template = {
   name: 'basic',
@@ -8,7 +9,7 @@ const basicTemplate: Template = {
     'tslib',
     'typescript',
     'size-limit',
-    '@size-limit/preset-small-lib',
+    '@size-limit/preset-small-lib'
   ],
   packageJson: {
     // name: safeName,
@@ -20,7 +21,7 @@ const basicTemplate: Template = {
     typings: `dist/index.d.ts`,
     files: ['dist', 'src'],
     engines: {
-      node: '>=10',
+      node: '>=10'
     },
     scripts: {
       start: 'tsdx watch',
@@ -29,7 +30,7 @@ const basicTemplate: Template = {
       lint: 'tsdx lint',
       prepare: 'tsdx build',
       size: 'size-limit',
-      analyze: 'size-limit --why',
+      analyze: 'size-limit --why'
     },
     peerDependencies: {},
     /*
@@ -46,16 +47,16 @@ const basicTemplate: Template = {
     */
     husky: {
       hooks: {
-        'pre-commit': 'tsdx lint',
-      },
+        'pre-commit': 'tsdx lint'
+      }
     },
     prettier: {
       printWidth: 80,
       semi: true,
       singleQuote: true,
-      trailingComma: 'es5',
-    },
-  },
-};
+      trailingComma: 'es5'
+    }
+  }
+}
 
-export default basicTemplate;
+export default basicTemplate

@@ -14,17 +14,17 @@
  *   { 0: 'MUCH ERROR', 1: 'SUCH WRONG' }
  */
 
-type Dict = { [key: string]: any };
+type Dict = { [key: string]: any }
 
 export function invertObject(targetObj: Dict) {
-  const result: Dict = {};
-  const mapKeys = Object.keys(targetObj);
+  const result: Dict = {}
+  const mapKeys = Object.keys(targetObj)
 
   for (const originalKey of mapKeys) {
-    const originalVal = targetObj[originalKey];
+    const originalVal = targetObj[originalKey]
 
-    result[originalVal] = originalKey;
+    result[originalVal] = originalKey
   }
 
-  return result;
+  return result
 }

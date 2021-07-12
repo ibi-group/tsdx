@@ -1,4 +1,4 @@
-import { InstallCommand } from './getInstallCmd';
+import { InstallCommand } from './getInstallCmd'
 
 export default function getInstallArgs(
   cmd: InstallCommand,
@@ -6,8 +6,8 @@ export default function getInstallArgs(
 ) {
   switch (cmd) {
     case 'npm':
-      return ['install', ...packages, '--save-dev'];
+      return ['install', ...packages, '--save-dev']
     case 'yarn':
-      return ['add', ...packages, '--dev'];
+      return ['add', ...packages, '--dev']
   }
 }

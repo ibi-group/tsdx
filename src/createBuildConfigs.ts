@@ -1,21 +1,21 @@
-import { RollupOptions, OutputOptions } from 'rollup';
-import * as fs from 'fs-extra';
-import { concatAllArray } from 'jpjs';
+/* eslint-disable sort-keys */
+import { RollupOptions, OutputOptions } from 'rollup'
+import * as fs from 'fs-extra'
+import { concatAllArray } from 'jpjs'
 
-import { paths } from './constants';
-import { TsdxOptions, NormalizedOpts } from './types';
-
-import { createRollupConfig } from './createRollupConfig';
+import { paths } from './constants'
+import { TsdxOptions, NormalizedOpts } from './types'
+import { createRollupConfig } from './createRollupConfig'
 
 // check for custom tsdx.config.js
 let tsdxConfig = {
   rollup(config: RollupOptions, _options: TsdxOptions): RollupOptions {
-    return config;
-  },
-};
+    return config
+  }
+}
 
 if (fs.existsSync(paths.appConfig)) {
-  tsdxConfig = require(paths.appConfig);
+  tsdxConfig = require(paths.appConfig)
 }
 
 export async function createBuildConfigs(
@@ -28,19 +28,19 @@ export async function createBuildConfigs(
           ...options,
           // We want to know if this is the first run for each entryfile
           // for certain plugins (e.g. css)
-          writeMeta: index === 0,
+          writeMeta: index === 0
         })
       )
     )
-  );
+  )
 
   return await Promise.all(
     allInputs.map(async (options: TsdxOptions, index: number) => {
       // pass the full rollup config to tsdx.config.js override
-      const config = await createRollupConfig(options, index);
-      return tsdxConfig.rollup(config, options);
+      const config = await createRollupConfig(options, index)
+      return tsdxConfig.rollup(config, options)
     })
-  );
+  )
 }
 
 function createAllFormats(
@@ -52,38 +52,38 @@ function createAllFormats(
       ...opts,
       format: 'cjs',
       env: 'development',
-      input,
+      input
     },
     opts.format.includes('cjs') && {
       ...opts,
       format: 'cjs',
       env: 'production',
-      input,
+      input
     },
     opts.format.includes('esm') && { ...opts, format: 'esm', input },
     opts.format.includes('umd') && {
       ...opts,
       format: 'umd',
       env: 'development',
-      input,
+      input
     },
     opts.format.includes('umd') && {
       ...opts,
       format: 'umd',
       env: 'production',
-      input,
+      input
     },
     opts.format.includes('system') && {
       ...opts,
       format: 'system',
       env: 'development',
-      input,
+      input
     },
     opts.format.includes('system') && {
       ...opts,
       format: 'system',
       env: 'production',
-      input,
-    },
-  ].filter(Boolean) as [TsdxOptions, ...TsdxOptions[]];
+      input
+    }
+  ].filter(Boolean) as [TsdxOptions, ...TsdxOptions[]]
 }

@@ -1,73 +1,77 @@
 #!/usr/bin/env node
+/* eslint-disable jest/no-jest-import */
 
-import sade from 'sade';
-import glob from 'tiny-glob/sync';
+import path from 'path'
+
+import sade from 'sade'
+import glob from 'tiny-glob/sync'
 import {
   rollup,
   watch,
   RollupOptions,
   OutputOptions,
   RollupWatchOptions,
-  WatcherOptions,
-} from 'rollup';
-import asyncro from 'asyncro';
-import chalk from 'chalk';
-import * as fs from 'fs-extra';
-import * as jest from 'jest';
-import { CLIEngine } from 'eslint';
-import logError from './logError';
-import path from 'path';
-import execa from 'execa';
-import shell from 'shelljs';
-import ora from 'ora';
-import semver from 'semver';
-import { paths } from './constants';
-import * as Messages from './messages';
-import { createBuildConfigs } from './createBuildConfigs';
-import { createJestConfig, JestConfigOptions } from './createJestConfig';
-import { createEslintConfig } from './createEslintConfig';
+  WatcherOptions
+} from 'rollup'
+import asyncro from 'asyncro'
+import chalk from 'chalk'
+import * as fs from 'fs-extra'
+import * as jest from 'jest'
+import { CLIEngine } from 'eslint'
+import execa from 'execa'
+import shell from 'shelljs'
+import ora from 'ora'
+import semver from 'semver'
+import { concatAllArray } from 'jpjs'
+import { Input, Select } from 'enquirer'
+
+import logError from './logError'
+import { paths } from './constants'
+import * as Messages from './messages'
+import { createBuildConfigs } from './createBuildConfigs'
+import { createJestConfig, JestConfigOptions } from './createJestConfig'
+import { createEslintConfig } from './createEslintConfig'
 import {
   resolveApp,
   safePackageName,
   clearConsole,
-  getNodeEngineRequirement,
-} from './utils';
-import { concatAllArray } from 'jpjs';
-import getInstallCmd from './getInstallCmd';
-import getInstallArgs from './getInstallArgs';
-import { Input, Select } from 'enquirer';
+  getNodeEngineRequirement
+} from './utils'
+import getInstallCmd from './getInstallCmd'
+import getInstallArgs from './getInstallArgs'
 import {
   PackageJson,
   WatchOpts,
   BuildOpts,
   ModuleFormat,
-  NormalizedOpts,
-} from './types';
-import { createProgressEstimator } from './createProgressEstimator';
-import { templates } from './templates';
-import { composePackageJson } from './templates/utils';
-import * as deprecated from './deprecated';
-const pkg = require('../package.json');
+  NormalizedOpts
+} from './types'
+import { createProgressEstimator } from './createProgressEstimator'
+import { templates } from './templates'
+import { composePackageJson } from './templates/utils'
+import * as deprecated from './deprecated'
 
-const prog = sade('tsdx');
+const pkg = require('../package.json')
 
-let appPackageJson: PackageJson;
+const prog = sade('tsdx')
+
+let appPackageJson: PackageJson
 
 try {
-  appPackageJson = fs.readJSONSync(paths.appPackageJson);
+  appPackageJson = fs.readJSONSync(paths.appPackageJson)
 } catch (e) {}
 
 export const isDir = (name: string) =>
   fs
     .stat(name)
-    .then(stats => stats.isDirectory())
-    .catch(() => false);
+    .then((stats) => stats.isDirectory())
+    .catch(() => false)
 
 export const isFile = (name: string) =>
   fs
     .stat(name)
-    .then(stats => stats.isFile())
-    .catch(() => false);
+    .then((stats) => stats.isFile())
+    .catch(() => false)
 
 async function jsOrTs(filename: string) {
   const extension = (await isFile(resolveApp(filename + '.ts')))
@@ -76,9 +80,9 @@ async function jsOrTs(filename: string) {
     ? '.tsx'
     : (await isFile(resolveApp(filename + '.jsx')))
     ? '.jsx'
-    : '.js';
+    : '.js'
 
-  return resolveApp(`${filename}${extension}`);
+  return resolveApp(`${filename}${extension}`)
 }
 
 async function getInputs(
@@ -93,8 +97,8 @@ async function getInputs(
           : (source && resolveApp(source)) ||
               ((await isDir(resolveApp('src'))) && (await jsOrTs('src/index')))
       )
-      .map(file => glob(file))
-  );
+      .map((file) => glob(file))
+  )
 }
 
 prog
@@ -120,136 +124,137 @@ prog
     #+#    #+#    #+# #+#    #+# #+#    #+#
     ###     ########  #########  ###    ###
 `)
-    );
-    const bootSpinner = ora(`Creating ${chalk.bold.green(pkg)}...`);
-    let template;
+    )
+    const bootSpinner = ora(`Creating ${chalk.bold.green(pkg)}...`)
+    let template
     // Helper fn to prompt the user for a different
     // folder name if one already exists
     async function getProjectPath(projectPath: string): Promise<string> {
-      const exists = await fs.pathExists(projectPath);
+      const exists = await fs.pathExists(projectPath)
       if (!exists) {
-        return projectPath;
+        return projectPath
       }
 
-      bootSpinner.fail(`Failed to create ${chalk.bold.red(pkg)}`);
+      bootSpinner.fail(`Failed to create ${chalk.bold.red(pkg)}`)
       const prompt = new Input({
+        initial: pkg + '-1',
         message: `A folder named ${chalk.bold.red(
           pkg
         )} already exists! ${chalk.bold('Choose a different name')}`,
-        initial: pkg + '-1',
-        result: (v: string) => v.trim(),
-      });
+        result: (v: string) => v.trim()
+      })
 
-      pkg = await prompt.run();
-      projectPath = (await fs.realpath(process.cwd())) + '/' + pkg;
-      bootSpinner.start(`Creating ${chalk.bold.green(pkg)}...`);
-      return await getProjectPath(projectPath); // recursion!
+      pkg = await prompt.run()
+      projectPath = (await fs.realpath(process.cwd())) + '/' + pkg
+      bootSpinner.start(`Creating ${chalk.bold.green(pkg)}...`)
+      return await getProjectPath(projectPath) // recursion!
     }
 
     try {
       // get the project path
-      const realPath = await fs.realpath(process.cwd());
-      let projectPath = await getProjectPath(realPath + '/' + pkg);
+      const realPath = await fs.realpath(process.cwd())
+      const projectPath = await getProjectPath(realPath + '/' + pkg)
 
       const prompt = new Select({
-        message: 'Choose a template',
         choices: Object.keys(templates),
-      });
+        message: 'Choose a template'
+      })
 
       if (opts.template) {
-        template = opts.template.trim();
+        template = opts.template.trim()
         if (!prompt.choices.includes(template)) {
-          bootSpinner.fail(`Invalid template ${chalk.bold.red(template)}`);
-          template = await prompt.run();
+          bootSpinner.fail(`Invalid template ${chalk.bold.red(template)}`)
+          template = await prompt.run()
         }
       } else {
-        template = await prompt.run();
+        template = await prompt.run()
       }
 
-      bootSpinner.start();
+      bootSpinner.start()
       // copy the template
       await fs.copy(
         path.resolve(__dirname, `../templates/${template}`),
         projectPath,
         {
-          overwrite: true,
+          overwrite: true
         }
-      );
+      )
       // fix gitignore
       await fs.move(
         path.resolve(projectPath, './gitignore'),
         path.resolve(projectPath, './.gitignore')
-      );
+      )
 
       // update license year and author
       let license: string = await fs.readFile(
         path.resolve(projectPath, 'LICENSE'),
         { encoding: 'utf-8' }
-      );
+      )
 
-      license = license.replace(/<year>/, `${new Date().getFullYear()}`);
+      license = license.replace(/<year>/, `${new Date().getFullYear()}`)
 
       // attempt to automatically derive author name
-      let author = getAuthorName();
+      let author = getAuthorName()
 
       if (!author) {
-        bootSpinner.stop();
+        bootSpinner.stop()
         const licenseInput = new Input({
-          name: 'author',
           message: 'Who is the package author?',
-        });
-        author = await licenseInput.run();
-        setAuthorName(author);
-        bootSpinner.start();
+          name: 'author'
+        })
+        author = await licenseInput.run()
+        setAuthorName(author)
+        bootSpinner.start()
       }
 
-      license = license.replace(/<author>/, author.trim());
+      license = license.replace(/<author>/, author.trim())
 
       await fs.writeFile(path.resolve(projectPath, 'LICENSE'), license, {
-        encoding: 'utf-8',
-      });
+        encoding: 'utf-8'
+      })
 
-      const templateConfig = templates[template as keyof typeof templates];
-      const generatePackageJson = composePackageJson(templateConfig);
+      const templateConfig = templates[template as keyof typeof templates]
+      const generatePackageJson = composePackageJson(templateConfig)
 
       // Install deps
-      process.chdir(projectPath);
-      const safeName = safePackageName(pkg);
-      const pkgJson = generatePackageJson({ name: safeName, author });
+      process.chdir(projectPath)
+      const safeName = safePackageName(pkg)
+      // eslint-disable-next-line sort-keys
+      const pkgJson = generatePackageJson({ name: safeName, author })
 
-      const nodeVersionReq = getNodeEngineRequirement(pkgJson);
+      const nodeVersionReq = getNodeEngineRequirement(pkgJson)
       if (
         nodeVersionReq &&
         !semver.satisfies(process.version, nodeVersionReq)
       ) {
-        bootSpinner.fail(Messages.incorrectNodeVersion(nodeVersionReq));
-        process.exit(1);
+        bootSpinner.fail(Messages.incorrectNodeVersion(nodeVersionReq))
+        process.exit(1)
       }
 
-      await fs.outputJSON(path.resolve(projectPath, 'package.json'), pkgJson);
-      bootSpinner.succeed(`Created ${chalk.bold.green(pkg)}`);
-      await Messages.start(pkg);
+      await fs.outputJSON(path.resolve(projectPath, 'package.json'), pkgJson)
+      bootSpinner.succeed(`Created ${chalk.bold.green(pkg)}`)
+      await Messages.start(pkg)
     } catch (error) {
-      bootSpinner.fail(`Failed to create ${chalk.bold.red(pkg)}`);
-      logError(error);
-      process.exit(1);
+      bootSpinner.fail(`Failed to create ${chalk.bold.red(pkg)}`)
+      logError(error)
+      process.exit(1)
     }
 
-    const templateConfig = templates[template as keyof typeof templates];
-    const { dependencies: deps } = templateConfig;
+    const templateConfig = templates[template as keyof typeof templates]
+    const { dependencies: deps } = templateConfig
 
-    const installSpinner = ora(Messages.installing(deps.sort())).start();
+    const installSpinner = ora(Messages.installing(deps.sort())).start()
     try {
-      const cmd = await getInstallCmd();
-      await execa(cmd, getInstallArgs(cmd, deps));
-      installSpinner.succeed('Installed dependencies');
-      console.log(await Messages.start(pkg));
+      const cmd = await getInstallCmd()
+      await execa(cmd, getInstallArgs(cmd, deps))
+      installSpinner.succeed('Installed dependencies')
+      console.log(await Messages.start(pkg))
     } catch (error) {
-      installSpinner.fail('Failed to install dependencies');
-      logError(error);
-      process.exit(1);
+      installSpinner.fail('Failed to install dependencies')
+      logError(error)
+      process.exit(1)
     }
-  });
+  })
 
 prog
   .command('watch')
@@ -282,83 +287,83 @@ prog
   .option('--extractErrors', 'Extract invariant errors to ./errors/codes.json.')
   .example('watch --extractErrors')
   .action(async (dirtyOpts: WatchOpts) => {
-    const opts = await normalizeOpts(dirtyOpts);
-    const buildConfigs = await createBuildConfigs(opts);
+    const opts = await normalizeOpts(dirtyOpts)
+    const buildConfigs = await createBuildConfigs(opts)
     if (!opts.noClean) {
-      await cleanDistFolder();
+      await cleanDistFolder()
     }
     if (opts.format.includes('cjs')) {
-      await writeCjsEntryFile(opts.name);
+      await writeCjsEntryFile(opts.name)
     }
 
-    type Killer = execa.ExecaChildProcess | null;
+    type Killer = execa.ExecaChildProcess | null
 
-    let firstTime = true;
-    let successKiller: Killer = null;
-    let failureKiller: Killer = null;
+    let firstTime = true
+    let successKiller: Killer = null
+    let failureKiller: Killer = null
 
     function run(command?: string) {
       if (!command) {
-        return null;
+        return null
       }
 
-      const [exec, ...args] = command.split(' ');
+      const [exec, ...args] = command.split(' ')
       return execa(exec, args, {
-        stdio: 'inherit',
-      });
+        stdio: 'inherit'
+      })
     }
 
     function killHooks() {
       return Promise.all([
         successKiller ? successKiller.kill('SIGTERM') : null,
-        failureKiller ? failureKiller.kill('SIGTERM') : null,
-      ]);
+        failureKiller ? failureKiller.kill('SIGTERM') : null
+      ])
     }
 
-    const spinner = ora().start();
+    const spinner = ora().start()
     watch(
-      (buildConfigs as RollupWatchOptions[]).map(inputOptions => ({
+      (buildConfigs as RollupWatchOptions[]).map((inputOptions) => ({
         watch: {
-          silent: true,
-          include: ['src/**'],
           exclude: ['node_modules/**'],
+          include: ['src/**'],
+          silent: true
         } as WatcherOptions,
-        ...inputOptions,
+        ...inputOptions
       }))
-    ).on('event', async event => {
+    ).on('event', async (event) => {
       // clear previous onSuccess/onFailure hook processes so they don't pile up
-      await killHooks();
+      await killHooks()
 
       if (event.code === 'START') {
         if (!opts.verbose) {
-          clearConsole();
+          clearConsole()
         }
-        spinner.start(chalk.bold.cyan('Compiling modules...'));
+        spinner.start(chalk.bold.cyan('Compiling modules...'))
       }
       if (event.code === 'ERROR') {
-        spinner.fail(chalk.bold.red('Failed to compile'));
-        logError(event.error);
-        failureKiller = run(opts.onFailure);
+        spinner.fail(chalk.bold.red('Failed to compile'))
+        logError(event.error)
+        failureKiller = run(opts.onFailure)
       }
       if (event.code === 'END') {
-        spinner.succeed(chalk.bold.green('Compiled successfully'));
+        spinner.succeed(chalk.bold.green('Compiled successfully'))
         console.log(`
   ${chalk.dim('Watching for changes')}
-`);
+`)
 
         try {
-          await deprecated.moveTypes();
+          await deprecated.moveTypes()
 
           if (firstTime && opts.onFirstSuccess) {
-            firstTime = false;
-            run(opts.onFirstSuccess);
+            firstTime = false
+            run(opts.onFirstSuccess)
           } else {
-            successKiller = run(opts.onSuccess);
+            successKiller = run(opts.onSuccess)
           }
         } catch (_error) {}
       }
-    });
-  });
+    })
+  })
 
 prog
   .command('build')
@@ -383,57 +388,57 @@ prog
     'build --extractErrors=https://reactjs.org/docs/error-decoder.html?invariant='
   )
   .action(async (dirtyOpts: BuildOpts) => {
-    const opts = await normalizeOpts(dirtyOpts);
-    const buildConfigs = await createBuildConfigs(opts);
-    await cleanDistFolder();
-    const logger = await createProgressEstimator();
+    const opts = await normalizeOpts(dirtyOpts)
+    const buildConfigs = await createBuildConfigs(opts)
+    await cleanDistFolder()
+    const logger = await createProgressEstimator()
     if (opts.format.includes('cjs')) {
-      const promise = writeCjsEntryFile(opts.name).catch(logError);
-      logger(promise, 'Creating entry file');
+      const promise = writeCjsEntryFile(opts.name).catch(logError)
+      logger(promise, 'Creating entry file')
     }
     try {
       const promise = asyncro
         .map(
           buildConfigs,
           async (inputOptions: RollupOptions & { output: OutputOptions }) => {
-            let bundle = await rollup(inputOptions);
-            await bundle.write(inputOptions.output);
+            const bundle = await rollup(inputOptions)
+            await bundle.write(inputOptions.output)
           }
         )
         .catch((e: any) => {
-          throw e;
+          throw e
         })
         .then(async () => {
-          await deprecated.moveTypes();
-        });
-      logger(promise, 'Building modules');
-      await promise;
+          await deprecated.moveTypes()
+        })
+      logger(promise, 'Building modules')
+      await promise
     } catch (error) {
-      logError(error);
-      process.exit(1);
+      logError(error)
+      process.exit(1)
     }
-  });
+  })
 
 async function normalizeOpts(opts: WatchOpts): Promise<NormalizedOpts> {
   return {
     ...opts,
-    name: opts.name || appPackageJson.name,
-    input: await getInputs(opts.entry, appPackageJson.source),
     format: opts.format.split(',').map((format: string) => {
       if (format === 'es') {
-        return 'esm';
+        return 'esm'
       }
-      return format;
+      return format
     }) as [ModuleFormat, ...ModuleFormat[]],
-  };
+    input: await getInputs(opts.entry, appPackageJson.source),
+    name: opts.name || appPackageJson.name
+  }
 }
 
 async function cleanDistFolder() {
-  await fs.remove(paths.appDist);
+  await fs.remove(paths.appDist)
 }
 
 function writeCjsEntryFile(name: string) {
-  const baseLine = `module.exports = require('./${safePackageName(name)}`;
+  const baseLine = `module.exports = require('./${safePackageName(name)}`
   const contents = `
 'use strict'
 
@@ -442,41 +447,41 @@ if (process.env.NODE_ENV === 'production') {
 } else {
   ${baseLine}.cjs.development.js')
 }
-`;
-  return fs.outputFile(path.join(paths.appDist, 'index.js'), contents);
+`
+  return fs.outputFile(path.join(paths.appDist, 'index.js'), contents)
 }
 
 function getAuthorName() {
-  let author = '';
+  let author = ''
 
   author = shell
     .exec('npm config get init-author-name', { silent: true })
-    .stdout.trim();
-  if (author) return author;
+    .stdout.trim()
+  if (author) return author
 
   author = shell
     .exec('git config --global user.name', { silent: true })
-    .stdout.trim();
+    .stdout.trim()
   if (author) {
-    setAuthorName(author);
-    return author;
+    setAuthorName(author)
+    return author
   }
 
   author = shell
     .exec('npm config get init-author-email', { silent: true })
-    .stdout.trim();
-  if (author) return author;
+    .stdout.trim()
+  if (author) return author
 
   author = shell
     .exec('git config --global user.email', { silent: true })
-    .stdout.trim();
-  if (author) return author;
+    .stdout.trim()
+  if (author) return author
 
-  return author;
+  return author
 }
 
 function setAuthorName(author: string) {
-  shell.exec(`npm config set init-author-name "${author}"`, { silent: true });
+  shell.exec(`npm config set init-author-name "${author}"`, { silent: true })
 }
 
 prog
@@ -484,44 +489,44 @@ prog
   .describe('Run jest test runner. Passes through all flags directly to Jest')
   .action(async (opts: { config?: string }) => {
     // Do this as the first thing so that any code reading it knows the right env.
-    process.env.BABEL_ENV = 'test';
-    process.env.NODE_ENV = 'test';
+    process.env.BABEL_ENV = 'test'
+    process.env.NODE_ENV = 'test'
     // Makes the script crash on unhandled rejections instead of silently
     // ignoring them. In the future, promise rejections that are not handled will
     // terminate the Node.js process with a non-zero exit code.
-    process.on('unhandledRejection', err => {
-      throw err;
-    });
+    process.on('unhandledRejection', (err) => {
+      throw err
+    })
 
-    const argv = process.argv.slice(2);
+    const argv = process.argv.slice(2)
     let jestConfig: JestConfigOptions = {
       ...createJestConfig(
-        relativePath => path.resolve(__dirname, '..', relativePath),
+        (relativePath) => path.resolve(__dirname, '..', relativePath),
         opts.config ? path.dirname(opts.config) : paths.appRoot
       ),
-      ...appPackageJson.jest,
-    };
+      ...appPackageJson.jest
+    }
 
     // Allow overriding with jest.config
-    const defaultPathExists = await fs.pathExists(paths.jestConfig);
+    const defaultPathExists = await fs.pathExists(paths.jestConfig)
     if (opts.config || defaultPathExists) {
-      const jestConfigPath = resolveApp(opts.config || paths.jestConfig);
-      const jestConfigContents: JestConfigOptions = require(jestConfigPath);
-      jestConfig = { ...jestConfig, ...jestConfigContents };
+      const jestConfigPath = resolveApp(opts.config || paths.jestConfig)
+      const jestConfigContents: JestConfigOptions = require(jestConfigPath)
+      jestConfig = { ...jestConfig, ...jestConfigContents }
     }
 
     // if custom path, delete the arg as it's already been merged
     if (opts.config) {
-      let configIndex = argv.indexOf('--config');
+      let configIndex = argv.indexOf('--config')
       if (configIndex !== -1) {
         // case of "--config path", delete both args
-        argv.splice(configIndex, 2);
+        argv.splice(configIndex, 2)
       } else {
         // case of "--config=path", only one arg to delete
-        const configRegex = /--config=.+/;
-        configIndex = argv.findIndex(arg => arg.match(configRegex));
+        const configRegex = /--config=.+/
+        configIndex = argv.findIndex((arg) => arg.match(configRegex))
         if (configIndex !== -1) {
-          argv.splice(configIndex, 1);
+          argv.splice(configIndex, 1)
         }
       }
     }
@@ -529,13 +534,13 @@ prog
     argv.push(
       '--config',
       JSON.stringify({
-        ...jestConfig,
+        ...jestConfig
       })
-    );
+    )
 
-    const [, ...argsToPassToJestCli] = argv;
-    jest.run(argsToPassToJestCli);
-  });
+    const [, ...argsToPassToJestCli] = argv
+    jest.run(argsToPassToJestCli)
+  })
 
 prog
   .command('lint')
@@ -557,57 +562,57 @@ prog
   .example('lint --report-file eslint-report.json')
   .action(
     async (opts: {
-      fix: boolean;
-      'ignore-pattern': string;
-      'write-file': boolean;
-      'report-file': string;
-      'max-warnings': number;
-      _: string[];
+      fix: boolean
+      'ignore-pattern': string
+      'write-file': boolean
+      'report-file': string
+      'max-warnings': number
+      _: string[]
     }) => {
-      if (opts['_'].length === 0 && !opts['write-file']) {
-        const defaultInputs = ['src', 'test'].filter(fs.existsSync);
-        opts['_'] = defaultInputs;
+      if (opts._.length === 0 && !opts['write-file']) {
+        const defaultInputs = ['src', 'test'].filter(fs.existsSync)
+        opts._ = defaultInputs
         console.log(
           chalk.yellow(
             `Defaulting to "tsdx lint ${defaultInputs.join(' ')}"`,
             '\nYou can override this in the package.json scripts, like "lint": "tsdx lint src otherDir"'
           )
-        );
+        )
       }
 
       const config = await createEslintConfig({
         pkg: appPackageJson,
         rootDir: paths.appRoot,
-        writeFile: opts['write-file'],
-      });
+        writeFile: opts['write-file']
+      })
 
       const cli = new CLIEngine({
         baseConfig: {
           ...config,
-          ...appPackageJson.eslint,
+          ...appPackageJson.eslint
         },
         extensions: ['.ts', '.tsx', '.js', '.jsx'],
         fix: opts.fix,
-        ignorePattern: opts['ignore-pattern'],
-      });
-      const report = cli.executeOnFiles(opts['_']);
+        ignorePattern: opts['ignore-pattern']
+      })
+      const report = cli.executeOnFiles(opts._)
       if (opts.fix) {
-        CLIEngine.outputFixes(report);
+        CLIEngine.outputFixes(report)
       }
-      console.log(cli.getFormatter()(report.results));
+      console.log(cli.getFormatter()(report.results))
       if (opts['report-file']) {
         await fs.outputFile(
           opts['report-file'],
           cli.getFormatter('json')(report.results)
-        );
+        )
       }
       if (report.errorCount) {
-        process.exit(1);
+        process.exit(1)
       }
       if (report.warningCount > opts['max-warnings']) {
-        process.exit(1);
+        process.exit(1)
       }
     }
-  );
+  )
 
-prog.parse(process.argv);
+prog.parse(process.argv)

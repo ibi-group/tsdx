@@ -6,22 +6,25 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import fs from 'fs';
-import { invertObject } from './invertObject';
-import { evalToString } from './evalToString';
-import { addDefault } from '@babel/helper-module-imports';
-import { paths } from '../constants';
+import fs from 'fs'
+
+import { addDefault } from '@babel/helper-module-imports'
+
+import { paths } from '../constants'
+
+import { invertObject } from './invertObject'
+import { evalToString } from './evalToString'
 
 export default function transformErrorMessages(babel: any) {
-  const t = babel.types;
+  const t = babel.types
 
-  const DEV_EXPRESSION = t.identifier('__DEV__');
+  const DEV_EXPRESSION = t.identifier('__DEV__')
 
   return {
     visitor: {
       CallExpression(path: any, file: any) {
-        const node = path.node;
-        const noMinify = file.opts.noMinify;
+        const node = path.node
+        const noMinify = file.opts.noMinify
         if (path.get('callee').isIdentifier({ name: 'invariant' })) {
           // Turns this code:
           //
@@ -40,31 +43,30 @@ export default function transformErrorMessages(babel: any) {
           // where ERR_CODE is an error code: a unique identifier (a number
           // string) that references a verbose error message. The mapping is
           // stored in `paths.appErrorsJson`.
-          const condition = node.arguments[0];
-          const errorMsgLiteral = evalToString(node.arguments[1]);
-          const errorMsgExpressions = Array.from(node.arguments.slice(2));
-          const errorMsgQuasis = errorMsgLiteral
-            .split('%s')
-            .map((raw: any) =>
-              t.templateElement({ raw, cooked: String.raw({ raw } as any) })
-            );
+          const condition = node.arguments[0]
+          const errorMsgLiteral = evalToString(node.arguments[1])
+          const errorMsgExpressions = Array.from(node.arguments.slice(2))
+          const errorMsgQuasis = errorMsgLiteral.split('%s').map((raw: any) =>
+            // eslint-disable-next-line sort-keys
+            t.templateElement({ raw, cooked: String.raw({ raw } as any) })
+          )
 
           // Import ReactError
           const reactErrorIdentfier = addDefault(
             path,
             paths.appRoot + '/errors/ErrorDev.js',
             {
-              nameHint: 'InvariantError',
+              nameHint: 'InvariantError'
             }
-          );
+          )
 
           // Outputs:
           //   throw ReactError(`A ${adj} message that contains ${noun}`);
           const devThrow = t.throwStatement(
             t.callExpression(reactErrorIdentfier, [
-              t.templateLiteral(errorMsgQuasis, errorMsgExpressions),
+              t.templateLiteral(errorMsgQuasis, errorMsgExpressions)
             ])
-          );
+          )
 
           if (noMinify) {
             // Error minification is disabled for this build.
@@ -78,17 +80,17 @@ export default function transformErrorMessages(babel: any) {
                 t.unaryExpression('!', condition),
                 t.blockStatement([devThrow])
               )
-            );
-            return;
+            )
+            return
           }
 
           // Avoid caching because we write it as we go.
           const existingErrorMap = JSON.parse(
             fs.readFileSync(paths.appErrorsJson, 'utf-8')
-          );
-          const errorMap = invertObject(existingErrorMap);
+          )
+          const errorMap = invertObject(existingErrorMap)
 
-          let prodErrorId = errorMap[errorMsgLiteral];
+          let prodErrorId = errorMap[errorMsgLiteral]
 
           if (prodErrorId === undefined) {
             // There is no error code for this message. Add an inline comment
@@ -105,32 +107,32 @@ export default function transformErrorMessages(babel: any) {
                 t.unaryExpression('!', condition),
                 t.blockStatement([devThrow])
               )
-            );
+            )
             path.addComment(
               'leading',
               'FIXME (minify-errors-in-prod): Unminified error message in production build!'
-            );
-            return;
+            )
+            return
           }
-          prodErrorId = parseInt(prodErrorId, 10);
+          prodErrorId = parseInt(prodErrorId, 10)
 
           // Import ReactErrorProd
           const reactErrorProdIdentfier = addDefault(
             path,
             paths.appRoot + '/errors/ErrorProd.js',
             {
-              nameHint: 'InvariantErrorProd',
+              nameHint: 'InvariantErrorProd'
             }
-          );
+          )
 
           // Outputs:
           //   throw ReactErrorProd(ERR_CODE, adj, noun);
           const prodThrow = t.throwStatement(
             t.callExpression(reactErrorProdIdentfier, [
               t.numericLiteral(prodErrorId),
-              ...errorMsgExpressions,
+              ...errorMsgExpressions
             ])
-          );
+          )
 
           // Outputs:
           //   if (!condition) {
@@ -148,12 +150,12 @@ export default function transformErrorMessages(babel: any) {
                   DEV_EXPRESSION,
                   t.blockStatement([devThrow]),
                   t.blockStatement([prodThrow])
-                ),
+                )
               ])
             )
-          );
+          )
         }
-      },
-    },
-  };
+      }
+    }
+  }
 }

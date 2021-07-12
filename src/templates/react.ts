@@ -1,7 +1,8 @@
-import { Template } from './template';
+/* eslint-disable sort-keys */
+import { PackageJson } from 'type-fest'
 
-import basicTemplate from './basic';
-import { PackageJson } from 'type-fest';
+import { Template } from './template'
+import basicTemplate from './basic'
 
 const reactTemplate: Template = {
   name: 'react',
@@ -10,18 +11,18 @@ const reactTemplate: Template = {
     '@types/react',
     '@types/react-dom',
     'react',
-    'react-dom',
+    'react-dom'
   ],
   packageJson: {
     ...basicTemplate.packageJson,
     peerDependencies: {
-      react: '>=16',
+      react: '>=16'
     },
     scripts: {
       ...basicTemplate.packageJson.scripts,
-      test: 'tsdx test --passWithNoTests',
-    } as PackageJson['scripts'],
-  },
-};
+      test: 'tsdx test --passWithNoTests'
+    } as PackageJson['scripts']
+  }
+}
 
-export default reactTemplate;
+export default reactTemplate

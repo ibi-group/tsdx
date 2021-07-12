@@ -1,28 +1,30 @@
-import { safeVariableName, safePackageName, external } from './utils';
-import { paths } from './constants';
-import { RollupOptions } from 'rollup';
-import { terser } from 'rollup-plugin-terser';
-import { DEFAULT_EXTENSIONS as DEFAULT_BABEL_EXTENSIONS } from '@babel/core';
-import commonjs from '@rollup/plugin-commonjs';
-import json from '@rollup/plugin-json';
-import replace from '@rollup/plugin-replace';
+/* eslint-disable @typescript-eslint/camelcase */
+/* eslint-disable sort-keys */
+import { RollupOptions } from 'rollup'
+import { terser } from 'rollup-plugin-terser'
+import { DEFAULT_EXTENSIONS as DEFAULT_BABEL_EXTENSIONS } from '@babel/core'
+import commonjs from '@rollup/plugin-commonjs'
+import json from '@rollup/plugin-json'
+import replace from '@rollup/plugin-replace'
 import resolve, {
-  DEFAULTS as RESOLVE_DEFAULTS,
-} from '@rollup/plugin-node-resolve';
-import sourceMaps from 'rollup-plugin-sourcemaps';
-import typescript from 'rollup-plugin-typescript2';
-import ts from 'typescript';
+  DEFAULTS as RESOLVE_DEFAULTS
+} from '@rollup/plugin-node-resolve'
+import sourceMaps from 'rollup-plugin-sourcemaps'
+import typescript from 'rollup-plugin-typescript2'
+import ts from 'typescript'
 
-import { extractErrors } from './errors/extractErrors';
-import { babelPluginTsdx } from './babelPluginTsdx';
-import { TsdxOptions } from './types';
+import { paths } from './constants'
+import { safeVariableName, safePackageName, external } from './utils'
+import { extractErrors } from './errors/extractErrors'
+import { babelPluginTsdx } from './babelPluginTsdx'
+import { TsdxOptions } from './types'
 
 const errorCodeOpts = {
-  errorMapFilePath: paths.appErrorsJson,
-};
+  errorMapFilePath: paths.appErrorsJson
+}
 
 // shebang cache map thing because the transform only gets run once
-let shebang: any = {};
+const shebang: any = {}
 
 export async function createRollupConfig(
   opts: TsdxOptions,
@@ -30,31 +32,31 @@ export async function createRollupConfig(
 ): Promise<RollupOptions> {
   const findAndRecordErrorCodes = await extractErrors({
     ...errorCodeOpts,
-    ...opts,
-  });
+    ...opts
+  })
 
   const shouldMinify =
-    opts.minify !== undefined ? opts.minify : opts.env === 'production';
+    opts.minify !== undefined ? opts.minify : opts.env === 'production'
 
   const outputName = [
     `${paths.appDist}/${safePackageName(opts.name)}`,
     opts.format,
     opts.env,
     shouldMinify ? 'min' : '',
-    'js',
+    'js'
   ]
     .filter(Boolean)
-    .join('.');
+    .join('.')
 
-  const tsconfigPath = opts.tsconfig || paths.tsconfigJson;
+  const tsconfigPath = opts.tsconfig || paths.tsconfigJson
   // borrowed from https://github.com/facebook/create-react-app/pull/7248
-  const tsconfigJSON = ts.readConfigFile(tsconfigPath, ts.sys.readFile).config;
+  const tsconfigJSON = ts.readConfigFile(tsconfigPath, ts.sys.readFile).config
   // borrowed from https://github.com/ezolenko/rollup-plugin-typescript2/blob/42173460541b0c444326bf14f2c8c27269c4cb11/src/parse-tsconfig.ts#L48
   const tsCompilerOptions = ts.parseJsonConfigFileContent(
     tsconfigJSON,
     ts.sys,
     './'
-  ).options;
+  ).options
 
   return {
     // Tell Rollup the entry point to the package
@@ -63,10 +65,10 @@ export async function createRollupConfig(
     external: (id: string) => {
       // bundle in polyfills as TSDX can't (yet) ensure they're installed as deps
       if (id.startsWith('regenerator-runtime')) {
-        return false;
+        return false
       }
 
-      return external(id);
+      return external(id)
     },
     // Rollup has treeshaking by default, but we can optimize it further...
     treeshake: {
@@ -87,7 +89,7 @@ export async function createRollupConfig(
       // const illegalAccess = foo.quux.tooDeep;
       //
       // Punchline....Don't use getters and setters
-      propertyReadSideEffects: false,
+      propertyReadSideEffects: false
     },
     // Establish Rollup output
     output: {
@@ -103,30 +105,28 @@ export async function createRollupConfig(
       name: opts.name || safeVariableName(opts.name),
       sourcemap: true,
       globals: { react: 'React', 'react-native': 'ReactNative' },
-      exports: 'named',
+      exports: 'named'
     },
     plugins: [
       !!opts.extractErrors && {
         async transform(source: any) {
-          await findAndRecordErrorCodes(source);
-          return source;
-        },
+          await findAndRecordErrorCodes(source)
+          return source
+        }
       },
       resolve({
         mainFields: [
           'module',
           'main',
-          opts.target !== 'node' ? 'browser' : undefined,
+          opts.target !== 'node' ? 'browser' : undefined
         ].filter(Boolean) as string[],
-        extensions: [...RESOLVE_DEFAULTS.extensions, '.jsx'],
+        extensions: [...RESOLVE_DEFAULTS.extensions, '.jsx']
       }),
       // all bundled external modules need to be converted from CJS to ESM
       commonjs({
         // use a regex to make sure to include eventual hoisted packages
         include:
-          opts.format === 'umd'
-            ? /\/node_modules\//
-            : /\/regenerator-runtime\//,
+          opts.format === 'umd' ? /\/node_modules\// : /\/regenerator-runtime\//
       }),
       json(),
       {
@@ -136,18 +136,18 @@ export async function createRollupConfig(
         // to acorn. Taken from microbundle.
         // See: https://github.com/Rich-Harris/buble/pull/165
         transform(code: string) {
-          let reg = /^#!(.*)/;
-          let match = code.match(reg);
+          const reg = /^#!(.*)/
+          const match = code.match(reg)
 
-          shebang[opts.name] = match ? '#!' + match[1] : '';
+          shebang[opts.name] = match ? '#!' + match[1] : ''
 
-          code = code.replace(reg, '');
+          code = code.replace(reg, '')
 
           return {
             code,
-            map: null,
-          };
-        },
+            map: null
+          }
+        }
       },
       typescript({
         typescript: ts,
@@ -163,13 +163,13 @@ export async function createRollupConfig(
             'node_modules',
             'bower_components',
             'jspm_packages',
-            paths.appDist,
+            paths.appDist
           ],
           compilerOptions: {
             sourceMap: true,
             declaration: true,
-            jsx: 'react',
-          },
+            jsx: 'react'
+          }
         },
         tsconfigOverride: {
           compilerOptions: {
@@ -178,11 +178,11 @@ export async function createRollupConfig(
             // don't output declarations more than once
             ...(outputNum > 0
               ? { declaration: false, declarationMap: false }
-              : {}),
-          },
+              : {})
+          }
         },
         check: !opts.transpileOnly && outputNum === 0,
-        useTsconfigDeclarationDir: Boolean(tsCompilerOptions?.declarationDir),
+        useTsconfigDeclarationDir: Boolean(tsCompilerOptions?.declarationDir)
       }),
       babelPluginTsdx({
         exclude: 'node_modules/**',
@@ -191,13 +191,13 @@ export async function createRollupConfig(
         custom: {
           targets: opts.target === 'node' ? { node: '10' } : undefined,
           extractErrors: opts.extractErrors,
-          format: opts.format,
+          format: opts.format
         },
-        babelHelpers: 'bundled',
+        babelHelpers: 'bundled'
       }),
       opts.env !== undefined &&
         replace({
-          'process.env.NODE_ENV': JSON.stringify(opts.env),
+          'process.env.NODE_ENV': JSON.stringify(opts.env)
         }),
       sourceMaps(),
       shouldMinify &&
@@ -207,12 +207,12 @@ export async function createRollupConfig(
           compress: {
             keep_infinity: true,
             pure_getters: true,
-            passes: 10,
+            passes: 10
           },
           ecma: 5,
           toplevel: opts.format === 'cjs',
-          warnings: true,
-        }),
-    ],
-  };
+          warnings: true
+        })
+    ]
+  }
 }

@@ -33,6 +33,7 @@ export async function createEslintConfig({
     parser: '@typescript-eslint/parser',
     plugins: [
       '@typescript-eslint',
+      'sort-keys-fix',
       'import',
       'jest',
       'jsx-a11y',
@@ -102,6 +103,7 @@ export async function createEslintConfig({
           caseSensitive: false
         }
       ],
+      'sort-keys-fix/sort-keys-fix': 'warn',
       'sort-vars': [
         'error',
         {

@@ -119,6 +119,7 @@
     "babel-plugin-replace-identifiers": "^0.1.1",
     "cssnano": "^4.1.10",
     "doctoc": "^1.4.0",
+    "eslint-plugin-sort-keys-fix": "^1.1.1",
     "husky": "^4.2.2",
     "np": "^6.4.0",
     "pretty-quick": "^2.0.0",
