@@ -1,8 +1,7 @@
 import execa from 'execa'
 
-let cmd: InstallCommand
-
 export type InstallCommand = 'yarn' | 'npm'
+let cmd: InstallCommand
 
 export default async function getInstallCmd(): Promise<InstallCommand> {
   if (cmd) {
