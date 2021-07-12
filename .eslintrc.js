@@ -13,6 +13,7 @@ module.exports = {
   parser: '@typescript-eslint/parser',
   plugins: [
     '@typescript-eslint',
+    'sort-keys-fix',
     'import',
     'jest',
     'jsx-a11y',
@@ -21,7 +22,7 @@ module.exports = {
   ],
   rules: {
     '@typescript-eslint/member-delimiter-style': [
-      'error',
+      'off',
       {
         multiline: {
           delimiter: 'none',
@@ -86,6 +87,7 @@ module.exports = {
         caseSensitive: false
       }
     ],
+    'sort-keys-fix/sort-keys-fix': 'warn',
     'sort-vars': [
       'error',
       {

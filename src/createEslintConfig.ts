@@ -42,7 +42,8 @@ export async function createEslintConfig({
     ],
     rules: {
       '@typescript-eslint/member-delimiter-style': [
-        'error',
+        // handled by prettier
+        'off',
         {
           multiline: {
             delimiter: 'none',
