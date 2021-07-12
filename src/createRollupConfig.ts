@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 /* eslint-disable sort-keys */
 import { RollupOptions } from 'rollup'
 import { terser } from 'rollup-plugin-terser'
