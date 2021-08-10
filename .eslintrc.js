@@ -18,7 +18,8 @@ module.exports = {
     'jest',
     'jsx-a11y',
     'react',
-    'sort-destructure-keys'
+    'sort-destructure-keys',
+    'typescript-sort-keys'
   ],
   rules: {
     '@typescript-eslint/member-delimiter-style': [
