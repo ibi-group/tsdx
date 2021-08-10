@@ -24,6 +24,7 @@ export async function createEslintConfig({
       'standard-jsx',
       'react-app',
       'plugin:@typescript-eslint/recommended',
+      'plugin:typescript-sort-keys/recommended',
       'plugin:react/recommended',
       'plugin:jest/recommended',
       'plugin:jsx-a11y/strict',
