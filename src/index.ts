@@ -62,13 +62,13 @@ try {
   appPackageJson = fs.readJSONSync(paths.appPackageJson)
 } catch (e) {}
 
-export const isDir = (name: string) =>
+export const isDir = (name: string): Promise<boolean> =>
   fs
     .stat(name)
     .then((stats) => stats.isDirectory())
     .catch(() => false)
 
-export const isFile = (name: string) =>
+export const isFile = (name: string): Promise<boolean> =>
   fs
     .stat(name)
     .then((stats) => stats.isFile())
@@ -91,7 +91,7 @@ async function getInputs(
   source?: string
 ): Promise<string[]> {
   return concatAllArray(
-    ([] as any[])
+    ([] as unknown[])
       .concat(
         entries && entries.length
           ? entries
@@ -114,7 +114,7 @@ prog
     )}]`
   )
   .example('create --template react mypackage')
-  .action(async (pkg: string, opts: any) => {
+  .action(async (pkg: string, opts: Record<string, string>) => {
     console.log(
       chalk.blue(`
 ::::::::::: ::::::::  :::::::::  :::    :::
@@ -195,7 +195,7 @@ prog
       license = license.replace(/<year>/, `${new Date().getFullYear()}`)
 
       // attempt to automatically derive author name
-      let author = getAuthorName()
+      let author: string = getAuthorName()
 
       if (!author) {
         bootSpinner.stop()
@@ -221,7 +221,7 @@ prog
       process.chdir(projectPath)
       const safeName = safePackageName(pkg)
       // eslint-disable-next-line sort-keys
-      const pkgJson = generatePackageJson({ name: safeName, author })
+      const pkgJson = generatePackageJson({ author, name: safeName })
 
       const nodeVersionReq = getNodeEngineRequirement(pkgJson)
       if (
@@ -406,7 +406,7 @@ prog
             await bundle.write(inputOptions.output)
           }
         )
-        .catch((e: any) => {
+        .catch((e: unknown) => {
           throw e
         })
         .then(async () => {
@@ -571,11 +571,10 @@ prog
       _: string[]
     }) => {
       if (opts._.length === 0 && !opts['write-file']) {
-        const defaultInputs = ['src', 'test'].filter(fs.existsSync)
-        opts._ = defaultInputs
+        opts._ = []
         console.log(
           chalk.yellow(
-            `Defaulting to "tsdx lint ${defaultInputs.join(' ')}"`,
+            `Defaulting to "tsdx lint"`,
             '\nYou can override this in the package.json scripts, like "lint": "tsdx lint src otherDir"'
           )
         )
