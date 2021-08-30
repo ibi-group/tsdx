@@ -195,7 +195,7 @@ prog
       license = license.replace(/<year>/, `${new Date().getFullYear()}`)
 
       // attempt to automatically derive author name
-      let author = getAuthorName()
+      let author: string = getAuthorName()
 
       if (!author) {
         bootSpinner.stop()
@@ -571,11 +571,10 @@ prog
       _: string[]
     }) => {
       if (opts._.length === 0 && !opts['write-file']) {
-        const defaultInputs = [].filter(fs.existsSync)
-        opts._ = defaultInputs
+        opts._ = []
         console.log(
           chalk.yellow(
-            `Defaulting to "tsdx lint ${defaultInputs.join(' ')}"`,
+            `Defaulting to "tsdx lint"`,
             '\nYou can override this in the package.json scripts, like "lint": "tsdx lint src otherDir"'
           )
         )
